@@ -1,14 +1,27 @@
-import type { GameKind, ProgressState, RegionCode } from "../types";
-import { getGamesForRegion } from "../data/games";
+import type { AgeBand, GameKind, ProgressState, RegionCode } from "../types";
+import { getGamesForProfile } from "../data/games";
 
 export const defaultUnlockedGames: GameKind[] = [
+  "bedtime-stories",
+  "gentle-rhymes",
+  "sleepy-sequences",
+  "alphabet-garden",
+  "number-nest",
+  "animal-friends",
+  "bird-watch",
+  "flower-patch",
+  "coin-peekaboo",
   "coin-catcher",
+  "number-bubbles",
   "saving-pot",
   "count-match",
   "tiny-shop",
   "more-or-less",
   "coin-sorter",
   "giving-jar",
+  "same-different",
+  "tap-trail",
+  "sound-sequence",
   "step-shuffle",
   "move-bot",
   "repeat-pattern",
@@ -33,7 +46,8 @@ export function createInitialProgress(): ProgressState {
       moneyUnlocked: true,
       codeUnlocked: true,
       audioEnabled: true,
-      region: "uk"
+      region: "uk",
+      ageBand: "4-5"
     }
   };
 }
@@ -90,8 +104,12 @@ export function buySticker(state: ProgressState, stickerId: string, cost: number
   };
 }
 
-export function completionPercent(state: ProgressState, region: RegionCode = state.parentSettings.region) {
-  const games = getGamesForRegion(region);
+export function completionPercent(
+  state: ProgressState,
+  region: RegionCode = state.parentSettings.region,
+  ageBand: AgeBand = state.parentSettings.ageBand
+) {
+  const games = getGamesForProfile(region, ageBand);
   const total = games.reduce((sum, game) => sum + game.levels.length, 0);
   const complete = games.reduce((sum, game) => sum + (state.completedLevels[game.id]?.length ?? 0), 0);
   return total === 0 ? 0 : Math.round((complete / total) * 100);

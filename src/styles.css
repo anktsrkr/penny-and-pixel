@@ -649,7 +649,8 @@ p {
 .shop-game,
 .compare-game,
 .sorter-game,
-.choice-game {
+.choice-game,
+.listen-game {
   display: grid;
   gap: 18px;
   justify-items: center;
@@ -886,10 +887,31 @@ p {
 }
 
 .choice-card {
+  display: grid;
+  place-items: center;
+  gap: 8px;
   min-height: 104px;
   padding: 0 14px;
   background: white;
   cursor: pointer;
+}
+
+.picture-art {
+  width: min(220px, 70vw);
+  height: auto;
+}
+
+.picture-art.compact {
+  width: 104px;
+}
+
+.condition-card {
+  gap: 8px;
+  padding: 12px;
+}
+
+.condition-card span {
+  font-size: 1.5rem;
 }
 
 .choice-move {
@@ -908,6 +930,91 @@ p {
 
 .choice-stop {
   background: #ffe1df;
+}
+
+.sleepy-scene {
+  position: relative;
+  display: grid;
+  width: min(420px, 100%);
+  min-height: 190px;
+  place-items: center;
+  overflow: hidden;
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #25275f, #5b6ee1);
+  box-shadow: 0 5px 0 var(--ink);
+}
+
+.sleepy-scene .mascot {
+  width: 116px;
+  z-index: 2;
+}
+
+.moon-shape {
+  position: absolute;
+  top: 24px;
+  right: 42px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: #fff8bf;
+  box-shadow: -14px 0 0 #25275f;
+}
+
+.story-cloud {
+  position: absolute;
+  width: 92px;
+  height: 38px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 72%);
+}
+
+.cloud-one {
+  top: 52px;
+  left: 34px;
+}
+
+.cloud-two {
+  right: 72px;
+  bottom: 34px;
+}
+
+.calm-prompt,
+.refrain {
+  margin: 0;
+  padding: 10px 14px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: #f3fff1;
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.story-play {
+  background: #b197fc;
+}
+
+.story-lines {
+  display: grid;
+  width: min(720px, 100%);
+  gap: 10px;
+}
+
+.story-line {
+  min-height: 64px;
+  padding: 12px 16px;
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 4px 0 var(--ink);
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 900;
+  text-align: left;
+}
+
+.story-line.active {
+  background: #fff4d6;
 }
 
 .sequence-row {

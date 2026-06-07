@@ -1,15 +1,27 @@
-import type { GameDefinition, RegionCode, StickerDefinition } from "../types";
+import type { AgeBand, GameDefinition, RegionCode, StickerDefinition } from "../types";
 import { codingGames } from "./coding";
+import { discoveryGames } from "./discovery";
 import { createMoneyGames } from "./money";
+import { storyGames } from "./stories";
 
 export function getGamesForRegion(region: RegionCode = "uk"): GameDefinition[] {
-  return [...createMoneyGames(region), ...codingGames];
+  return [...storyGames, ...discoveryGames, ...createMoneyGames(region), ...codingGames];
+}
+
+export function getGamesForProfile(region: RegionCode = "uk", ageBand: AgeBand = "4-5"): GameDefinition[] {
+  return getGamesForRegion(region)
+    .filter((game) => !game.ageBands || game.ageBands.includes(ageBand))
+    .map((game) => ({
+      ...game,
+      levels: game.levels.filter((level) => !level.ageBands || level.ageBands.includes(ageBand))
+    }))
+    .filter((game) => game.levels.length > 0);
 }
 
 export const games = getGamesForRegion("uk");
 
-export function getGame(gameId: string | undefined, region: RegionCode = "uk") {
-  return getGamesForRegion(region).find((game) => game.id === gameId);
+export function getGame(gameId: string | undefined, region: RegionCode = "uk", ageBand: AgeBand = "4-5") {
+  return getGamesForProfile(region, ageBand).find((game) => game.id === gameId);
 }
 
 export const stickers: StickerDefinition[] = [
@@ -19,7 +31,10 @@ export const stickers: StickerDefinition[] = [
   { id: "party-hat", label: "Party Hat", cost: 5, palette: "#f184a3" },
   { id: "moon", label: "Moon", cost: 6, palette: "#7f77dd" },
   { id: "bus-pass", label: "Bus Pass", cost: 7, palette: "#e95d3f" },
-  { id: "tea-cup", label: "Tea Cup", cost: 8, palette: "#20c997" }
+  { id: "tea-cup", label: "Tea Cup", cost: 8, palette: "#20c997" },
+  { id: "bubble", label: "Bubble", cost: 3, palette: "#63d2ff" },
+  { id: "kite", label: "Kite", cost: 5, palette: "#74c0fc" },
+  { id: "music-note", label: "Music Note", cost: 4, palette: "#ffd43b" }
 ];
 
 export function levelKey(gameId: string, levelId: string) {

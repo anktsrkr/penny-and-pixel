@@ -1,11 +1,11 @@
 import { DndContext, DragEndEvent, PointerSensor, closestCenter, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, horizontalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, RotateCcw } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, Play, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { AudioButton } from "../components/controls";
-import { CoinVisual, ConfettiBurst, Mascot } from "../components/visuals";
+import { CoinVisual, ConfettiBurst, Mascot, PictureArt } from "../components/visuals";
 import { getGame } from "../data/games";
 import { getDenomination } from "../data/money";
 import { speak } from "../lib/audio";
@@ -17,7 +17,7 @@ const arrowChoices: Direction[] = ["up", "right", "down", "left"];
 export function LevelPlayer() {
   const { gameId } = useParams();
   const settings = useProgressStore((state) => state.progress.parentSettings);
-  const game = getGame(gameId, settings.region);
+  const game = getGame(gameId, settings.region, settings.ageBand);
   const [levelIndex, setLevelIndex] = useState(0);
   const [celebrating, setCelebrating] = useState(false);
   const completeLevel = useProgressStore((state) => state.completeLevel);
@@ -108,12 +108,17 @@ export function LevelPlayer() {
 }
 
 function GameSurface({ game, level, onComplete, alreadyDone }: { game: GameDefinition; level: LevelDefinition; onComplete: () => void; alreadyDone: boolean }) {
-  if (game.id === "coin-catcher") return <CoinCatcher level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
+  if (game.id === "bedtime-stories" || game.id === "gentle-rhymes") return <ListenAlong level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
+  if (game.id === "sleepy-sequences") return <StepShuffle level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
+  if (game.id === "coin-catcher" || game.id === "coin-peekaboo") return <CoinCatcher level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
   if (game.id === "saving-pot" || game.id === "giving-jar") return <DropCoins level={level} onComplete={onComplete} alreadyDone={alreadyDone} kind={game.id} />;
-  if (game.id === "count-match") return <CountMatch level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
+  if (game.id === "count-match" || game.id === "number-bubbles") return <CountMatch level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
   if (game.id === "tiny-shop") return <TinyShop level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
   if (game.id === "more-or-less") return <MoreOrLess level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
   if (game.id === "coin-sorter") return <CoinSorter level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
+  if (game.id === "same-different") return <ChoiceGame level={level} onComplete={onComplete} alreadyDone={alreadyDone} mode="shape" />;
+  if (game.id === "tap-trail") return <MoveBot level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
+  if (game.id === "sound-sequence") return <ChoiceGame level={level} onComplete={onComplete} alreadyDone={alreadyDone} mode="pattern" />;
   if (game.id === "step-shuffle") return <StepShuffle level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
   if (game.id === "move-bot") return <MoveBot level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
   if (game.id === "repeat-pattern") return <ChoiceGame level={level} onComplete={onComplete} alreadyDone={alreadyDone} mode="pattern" />;
@@ -124,6 +129,58 @@ function GameSurface({ game, level, onComplete, alreadyDone }: { game: GameDefin
 
 function CompleteMessage({ alreadyDone }: { alreadyDone: boolean }) {
   return <p className="success-note">{alreadyDone ? "Already in your stamp trail." : "Nice work. Stars added."}</p>;
+}
+
+function ListenAlong({ level, onComplete, alreadyDone }: GameProps) {
+  const [activeLine, setActiveLine] = useState<number | null>(null);
+  const [done, setDone] = useState(alreadyDone);
+  const lines = level.storyLines ?? [];
+
+  function playAll() {
+    const text = [level.calmPrompt, ...lines, level.refrain].filter(Boolean).join(" ");
+    speak({ id: `story-${level.id}`, text, tone: "tap" });
+    setActiveLine(0);
+    window.setTimeout(() => {
+      setDone(true);
+      setActiveLine(null);
+      if (!done) onComplete();
+    }, Math.min(9000, 1600 + lines.length * 850));
+  }
+
+  function playLine(line: string, index: number) {
+    setActiveLine(index);
+    speak({ id: `story-line-${level.id}-${index}`, text: line, tone: "tap" });
+  }
+
+  return (
+    <div className="listen-game">
+      <div className="sleepy-scene" aria-hidden="true">
+        <span className="moon-shape" />
+        <span className="story-cloud cloud-one" />
+        <span className="story-cloud cloud-two" />
+        <Mascot type="penny" mood="happy" />
+      </div>
+      {level.calmPrompt ? <p className="calm-prompt">{level.calmPrompt}</p> : null}
+      <AudioButton className="child-button story-play" cue={{ id: `play-${level.id}`, text: "Play story.", tone: "tap" }} onClick={playAll}>
+        <Play aria-hidden="true" />
+        Play
+      </AudioButton>
+      <div className="story-lines" aria-label="Story lines">
+        {lines.map((line, index) => (
+          <AudioButton
+            key={`${line}-${index}`}
+            className={`story-line ${activeLine === index ? "active" : ""}`}
+            cue={{ id: `tap-line-${level.id}-${index}`, text: line, tone: "tap" }}
+            onClick={() => playLine(line, index)}
+          >
+            {line}
+          </AudioButton>
+        ))}
+      </div>
+      {level.refrain ? <p className="refrain">{level.refrain}</p> : null}
+      {done ? <CompleteMessage alreadyDone={alreadyDone} /> : null}
+    </div>
+  );
 }
 
 function CoinCatcher({ level, onComplete, alreadyDone }: GameProps) {
@@ -534,11 +591,15 @@ function ChoiceGame({ level, onComplete, alreadyDone, mode }: GameProps & { mode
           <span className="pattern-card mystery">?</span>
         </div>
       ) : (
-        <div className="condition-card">{level.condition ?? "Command"}</div>
+        <div className="condition-card">
+          {level.targetPicture ? <PictureArt picture={level.targetPicture} label={level.condition ?? expected} /> : null}
+          <span>{level.condition ?? "Command"}</span>
+        </div>
       )}
       <div className="choice-grid">
         {choices.map((choice) => (
           <AudioButton key={choice} className={`choice-card choice-${choice.toLowerCase()}`} cue={{ id: `choice-${choice}`, text: choice, tone: "tap" }} onClick={() => choose(choice)}>
+            {level.choicePictures?.[choice] ? <PictureArt picture={level.choicePictures[choice]} label={choice} compact /> : null}
             {choice}
           </AudioButton>
         ))}

@@ -1,7 +1,7 @@
 import { Lock, ShieldCheck, Volume2 } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { AudioButton } from "../components/controls";
-import { getGamesForRegion } from "../data/games";
+import { getGamesForProfile } from "../data/games";
 import { completionPercent } from "../lib/rewards";
 import { hashPin, isValidPin } from "../lib/pin";
 import { useProgressStore } from "../store/progressStore";
@@ -85,8 +85,8 @@ export function ParentDashboard() {
     );
   }
 
-  const games = getGamesForRegion(progress.parentSettings.region);
-  const completed = completionPercent(progress, progress.parentSettings.region);
+  const games = getGamesForProfile(progress.parentSettings.region, progress.parentSettings.ageBand);
+  const completed = completionPercent(progress, progress.parentSettings.region, progress.parentSettings.ageBand);
   const completedCount = games.reduce((sum, game) => sum + (progress.completedLevels[game.id]?.length ?? 0), 0);
 
   return (
@@ -126,6 +126,22 @@ export function ParentDashboard() {
 
         <section className="settings-panel" aria-labelledby="settings-heading">
           <h2 id="settings-heading">Play settings</h2>
+          <div className="segmented-control" role="group" aria-label="Learner age">
+            <button
+              type="button"
+              className={progress.parentSettings.ageBand === "3-4" ? "active" : ""}
+              onClick={() => updateParentSettings({ ageBand: "3-4" })}
+            >
+              3-4 yrs
+            </button>
+            <button
+              type="button"
+              className={progress.parentSettings.ageBand === "4-5" ? "active" : ""}
+              onClick={() => updateParentSettings({ ageBand: "4-5" })}
+            >
+              4-5 yrs
+            </button>
+          </div>
           <div className="segmented-control" role="group" aria-label="Money region">
             <button
               type="button"

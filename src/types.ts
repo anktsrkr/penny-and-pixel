@@ -1,15 +1,30 @@
-export type World = "money" | "code";
+export type World = "money" | "code" | "discover" | "story";
 
 export type RegionCode = "uk" | "us";
 
+export type AgeBand = "3-4" | "4-5";
+
 export type GameKind =
+  | "alphabet-garden"
+  | "number-nest"
+  | "animal-friends"
+  | "bird-watch"
+  | "flower-patch"
+  | "bedtime-stories"
+  | "gentle-rhymes"
+  | "sleepy-sequences"
+  | "coin-peekaboo"
   | "coin-catcher"
+  | "number-bubbles"
   | "saving-pot"
   | "count-match"
   | "tiny-shop"
   | "more-or-less"
   | "coin-sorter"
   | "giving-jar"
+  | "same-different"
+  | "tap-trail"
+  | "sound-sequence"
   | "step-shuffle"
   | "move-bot"
   | "repeat-pattern"
@@ -30,6 +45,28 @@ export type DenominationId =
   | "us-nickel"
   | "us-dime"
   | "us-quarter";
+
+export type PictureKey =
+  | "apple"
+  | "ball"
+  | "cat"
+  | "dog"
+  | "one-flower"
+  | "two-birds"
+  | "three-cats"
+  | "four-ducks"
+  | "lion"
+  | "rabbit"
+  | "fish"
+  | "cow"
+  | "robin"
+  | "duck"
+  | "owl"
+  | "swan"
+  | "rose"
+  | "sunflower"
+  | "daisy"
+  | "tulip";
 
 export interface MoneyDenomination {
   id: DenominationId;
@@ -53,6 +90,7 @@ export interface LevelDefinition {
   title: string;
   narrator: string;
   stars: number;
+  ageBands?: AgeBand[];
   targetDenomination?: DenominationId;
   denominations?: DenominationId[];
   targetCount?: number;
@@ -69,6 +107,11 @@ export interface LevelDefinition {
   choices?: string[];
   expectedChoice?: string;
   pattern?: string[];
+  targetPicture?: PictureKey;
+  choicePictures?: Partial<Record<string, PictureKey>>;
+  storyLines?: string[];
+  refrain?: string;
+  calmPrompt?: string;
 }
 
 export interface GameDefinition {
@@ -77,6 +120,7 @@ export interface GameDefinition {
   shortTitle: string;
   world: World;
   region?: RegionCode;
+  ageBands?: AgeBand[];
   mascot: "penny" | "pixel";
   goal: string;
   color: string;
@@ -96,6 +140,7 @@ export interface ParentSettings {
   codeUnlocked: boolean;
   audioEnabled: boolean;
   region: RegionCode;
+  ageBand: AgeBand;
 }
 
 export interface ProgressState {
