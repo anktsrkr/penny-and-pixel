@@ -1,7 +1,7 @@
 import { Lock, ShieldCheck, Volume2 } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { AudioButton } from "../components/controls";
-import { games } from "../data/games";
+import { getGamesForRegion } from "../data/games";
 import { completionPercent } from "../lib/rewards";
 import { hashPin, isValidPin } from "../lib/pin";
 import { useProgressStore } from "../store/progressStore";
@@ -85,7 +85,8 @@ export function ParentDashboard() {
     );
   }
 
-  const completed = completionPercent(progress);
+  const games = getGamesForRegion(progress.parentSettings.region);
+  const completed = completionPercent(progress, progress.parentSettings.region);
   const completedCount = games.reduce((sum, game) => sum + (progress.completedLevels[game.id]?.length ?? 0), 0);
 
   return (
@@ -125,6 +126,22 @@ export function ParentDashboard() {
 
         <section className="settings-panel" aria-labelledby="settings-heading">
           <h2 id="settings-heading">Play settings</h2>
+          <div className="segmented-control" role="group" aria-label="Money region">
+            <button
+              type="button"
+              className={progress.parentSettings.region === "uk" ? "active" : ""}
+              onClick={() => updateParentSettings({ region: "uk" })}
+            >
+              UK
+            </button>
+            <button
+              type="button"
+              className={progress.parentSettings.region === "us" ? "active" : ""}
+              onClick={() => updateParentSettings({ region: "us" })}
+            >
+              US
+            </button>
+          </div>
           <label className="range-control">
             <span>Daily play limit: {progress.parentSettings.dailyLimitMinutes} min</span>
             <input

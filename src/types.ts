@@ -1,24 +1,74 @@
 export type World = "money" | "code";
 
+export type RegionCode = "uk" | "us";
+
 export type GameKind =
   | "coin-catcher"
-  | "piggy-bank"
+  | "saving-pot"
   | "count-match"
+  | "tiny-shop"
+  | "more-or-less"
+  | "coin-sorter"
+  | "giving-jar"
   | "step-shuffle"
-  | "move-bot";
+  | "move-bot"
+  | "repeat-pattern"
+  | "if-then-weather"
+  | "bug-hunt"
+  | "shape-commands";
 
-export type CoinName = "penny" | "nickel" | "dime" | "quarter";
+export type DenominationId =
+  | "uk-1p"
+  | "uk-2p"
+  | "uk-5p"
+  | "uk-10p"
+  | "uk-20p"
+  | "uk-50p"
+  | "uk-1-pound"
+  | "uk-2-pound"
+  | "us-penny"
+  | "us-nickel"
+  | "us-dime"
+  | "us-quarter";
+
+export interface MoneyDenomination {
+  id: DenominationId;
+  label: string;
+  shortLabel: string;
+  valueMinor: number;
+  symbol: string;
+  color: string;
+  region: RegionCode;
+  group: "bronze" | "silver" | "pound";
+}
+
+export interface SortGroup {
+  id: string;
+  label: string;
+  denominationIds: DenominationId[];
+}
 
 export interface LevelDefinition {
   id: string;
   title: string;
   narrator: string;
   stars: number;
-  targetCoin?: CoinName;
+  targetDenomination?: DenominationId;
+  denominations?: DenominationId[];
   targetCount?: number;
+  shopItem?: string;
+  priceMinor?: number;
+  pileA?: DenominationId[];
+  pileB?: DenominationId[];
+  sortGroups?: SortGroup[];
   sequence?: string[];
   shuffled?: string[];
   path?: Direction[];
+  buggyPath?: Direction[];
+  condition?: string;
+  choices?: string[];
+  expectedChoice?: string;
+  pattern?: string[];
 }
 
 export interface GameDefinition {
@@ -26,6 +76,7 @@ export interface GameDefinition {
   title: string;
   shortTitle: string;
   world: World;
+  region?: RegionCode;
   mascot: "penny" | "pixel";
   goal: string;
   color: string;
@@ -44,6 +95,7 @@ export interface ParentSettings {
   moneyUnlocked: boolean;
   codeUnlocked: boolean;
   audioEnabled: boolean;
+  region: RegionCode;
 }
 
 export interface ProgressState {

@@ -3,13 +3,14 @@ import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { AudioButton } from "../components/controls";
 import { Mascot } from "../components/visuals";
-import { games } from "../data/games";
+import { getGamesForRegion } from "../data/games";
 import { completionPercent } from "../lib/rewards";
 import { useProgressStore } from "../store/progressStore";
 
 export function HomeWorld() {
   const progress = useProgressStore((state) => state.progress);
-  const completed = completionPercent(progress);
+  const games = getGamesForRegion(progress.parentSettings.region);
+  const completed = completionPercent(progress, progress.parentSettings.region);
   const navigate = useNavigate();
 
   return (

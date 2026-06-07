@@ -6,23 +6,26 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { AudioButton } from "../components/controls";
 import { CoinVisual, ConfettiBurst, Mascot } from "../components/visuals";
-import { coins, getGame } from "../data/games";
+import { getGame } from "../data/games";
+import { getDenomination } from "../data/money";
 import { speak } from "../lib/audio";
 import { useProgressStore } from "../store/progressStore";
-import type { CoinName, Direction, GameDefinition, LevelDefinition } from "../types";
+import type { DenominationId, Direction, GameDefinition, LevelDefinition, SortGroup } from "../types";
+
+const arrowChoices: Direction[] = ["up", "right", "down", "left"];
 
 export function LevelPlayer() {
   const { gameId } = useParams();
-  const game = getGame(gameId);
+  const settings = useProgressStore((state) => state.progress.parentSettings);
+  const game = getGame(gameId, settings.region);
   const [levelIndex, setLevelIndex] = useState(0);
   const [celebrating, setCelebrating] = useState(false);
   const completeLevel = useProgressStore((state) => state.completeLevel);
   const completedLevels = useProgressStore((state) => state.progress.completedLevels);
-  const settings = useProgressStore((state) => state.progress.parentSettings);
 
   useEffect(() => {
     setLevelIndex(0);
-  }, [gameId]);
+  }, [gameId, settings.region]);
 
   if (!game) {
     return (
@@ -35,7 +38,6 @@ export function LevelPlayer() {
     );
   }
 
-  const selectedGame = game;
   const locked = (game.world === "money" && !settings.moneyUnlocked) || (game.world === "code" && !settings.codeUnlocked);
   if (locked) {
     return (
@@ -50,7 +52,8 @@ export function LevelPlayer() {
     );
   }
 
-  const level = game.levels[levelIndex];
+  const selectedGame = game;
+  const level = game.levels[levelIndex] ?? game.levels[0];
   const alreadyDone = completedLevels[game.id]?.includes(level.id) ?? false;
 
   function finishLevel() {
@@ -105,19 +108,18 @@ export function LevelPlayer() {
 }
 
 function GameSurface({ game, level, onComplete, alreadyDone }: { game: GameDefinition; level: LevelDefinition; onComplete: () => void; alreadyDone: boolean }) {
-  if (game.id === "coin-catcher") {
-    return <CoinCatcher level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
-  }
-  if (game.id === "piggy-bank") {
-    return <PiggyBank level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
-  }
-  if (game.id === "count-match") {
-    return <CountMatch level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
-  }
-  if (game.id === "step-shuffle") {
-    return <StepShuffle level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
-  }
-  return <MoveBot level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
+  if (game.id === "coin-catcher") return <CoinCatcher level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
+  if (game.id === "saving-pot" || game.id === "giving-jar") return <DropCoins level={level} onComplete={onComplete} alreadyDone={alreadyDone} kind={game.id} />;
+  if (game.id === "count-match") return <CountMatch level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
+  if (game.id === "tiny-shop") return <TinyShop level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
+  if (game.id === "more-or-less") return <MoreOrLess level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
+  if (game.id === "coin-sorter") return <CoinSorter level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
+  if (game.id === "step-shuffle") return <StepShuffle level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
+  if (game.id === "move-bot") return <MoveBot level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
+  if (game.id === "repeat-pattern") return <ChoiceGame level={level} onComplete={onComplete} alreadyDone={alreadyDone} mode="pattern" />;
+  if (game.id === "if-then-weather") return <ChoiceGame level={level} onComplete={onComplete} alreadyDone={alreadyDone} mode="weather" />;
+  if (game.id === "bug-hunt") return <BugHunt level={level} onComplete={onComplete} alreadyDone={alreadyDone} />;
+  return <ChoiceGame level={level} onComplete={onComplete} alreadyDone={alreadyDone} mode="shape" />;
 }
 
 function CompleteMessage({ alreadyDone }: { alreadyDone: boolean }) {
@@ -126,35 +128,28 @@ function CompleteMessage({ alreadyDone }: { alreadyDone: boolean }) {
 
 function CoinCatcher({ level, onComplete, alreadyDone }: GameProps) {
   const [done, setDone] = useState(alreadyDone);
-  const target = level.targetCoin ?? "penny";
-  const options = Object.keys(coins) as CoinName[];
+  const target = level.targetDenomination ?? level.denominations?.[0] ?? "uk-1p";
+  const options = level.denominations ?? [target];
 
-  function choose(name: CoinName) {
-    if (name === target) {
+  function choose(id: DenominationId) {
+    if (id === target) {
       setDone(true);
-      if (!done) {
-        onComplete();
-      }
+      if (!done) onComplete();
     } else {
-      speak({ id: "coin-hint", text: `Try again. Listen for ${coins[target].label}.`, tone: "hint" });
+      speak({ id: "coin-hint", text: `Try again. Listen for ${getDenomination(target).label}.`, tone: "hint" });
     }
   }
 
   return (
     <div className="coin-game">
       <div className="falling-zone">
-        <CoinVisual name={target} />
+        <CoinVisual denomination={target} />
       </div>
       <div className="choice-grid">
-        {options.map((name) => (
-          <AudioButton
-            key={name}
-            className="coin-choice"
-            cue={{ id: `coin-${name}`, text: coins[name].label, tone: "tap" }}
-            onClick={() => choose(name)}
-          >
-            <CoinVisual name={name} />
-            <span>{coins[name].label}</span>
+        {options.map((id) => (
+          <AudioButton key={id} className="coin-choice" cue={{ id: `coin-${id}`, text: getDenomination(id).label, tone: "tap" }} onClick={() => choose(id)}>
+            <CoinVisual denomination={id} />
+            <span>{getDenomination(id).shortLabel}</span>
           </AudioButton>
         ))}
       </div>
@@ -163,8 +158,9 @@ function CoinCatcher({ level, onComplete, alreadyDone }: GameProps) {
   );
 }
 
-function PiggyBank({ level, onComplete, alreadyDone }: GameProps) {
+function DropCoins({ level, onComplete, alreadyDone, kind }: GameProps & { kind: "saving-pot" | "giving-jar" }) {
   const count = level.targetCount ?? 3;
+  const coinIds: DenominationId[] = level.denominations?.length ? level.denominations : ["uk-1p", "uk-2p", "uk-5p"];
   const [saved, setSaved] = useState<string[]>([]);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const done = saved.length >= count || alreadyDone;
@@ -173,28 +169,27 @@ function PiggyBank({ level, onComplete, alreadyDone }: GameProps) {
     if (event.over?.id === "bank" && !saved.includes(String(event.active.id))) {
       const next = [...saved, String(event.active.id)];
       setSaved(next);
-      speak({ id: "save-coin", text: "Saved.", tone: "tap" });
-      if (next.length >= count && !done) {
-        onComplete();
-      }
+      speak({ id: "save-coin", text: kind === "giving-jar" ? "Shared." : "Saved.", tone: "tap" });
+      if (next.length >= count && !done) onComplete();
     }
   }
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-      <PiggyBankInner count={count} saved={saved} done={done} alreadyDone={alreadyDone} />
+      <DropCoinsInner count={count} saved={saved} done={done} alreadyDone={alreadyDone} coinIds={coinIds} kind={kind} />
     </DndContext>
   );
 }
 
-function PiggyBankInner({ count, saved, done, alreadyDone }: { count: number; saved: string[]; done: boolean; alreadyDone: boolean }) {
+function DropCoinsInner({ count, saved, done, alreadyDone, coinIds, kind }: { count: number; saved: string[]; done: boolean; alreadyDone: boolean; coinIds: DenominationId[]; kind: "saving-pot" | "giving-jar" }) {
   const { setNodeRef, isOver } = useDroppable({ id: "bank" });
   return (
     <div className="piggy-game">
       <div className="coin-bank-row">
         {Array.from({ length: count }).map((_, index) => {
           const id = `coin-${index}`;
-          return saved.includes(id) ? null : <DraggableCoin key={id} id={id} name={index % 2 === 0 ? "penny" : "nickel"} />;
+          const denomination = coinIds[index % coinIds.length];
+          return saved.includes(id) ? null : <DraggableCoin key={id} id={id} denomination={denomination} />;
         })}
       </div>
       <div ref={setNodeRef} className={`bank-drop ${isOver ? "over" : ""}`}>
@@ -202,39 +197,32 @@ function PiggyBankInner({ count, saved, done, alreadyDone }: { count: number; sa
         <strong>
           {saved.length}/{count}
         </strong>
-        <span>saved</span>
+        <span>{kind === "giving-jar" ? "shared" : "saved"}</span>
       </div>
       {done ? <CompleteMessage alreadyDone={alreadyDone} /> : null}
     </div>
   );
 }
 
-function DraggableCoin({ id, name }: { id: string; name: CoinName }) {
+function DraggableCoin({ id, denomination }: { id: string; denomination: DenominationId }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id });
   return (
-    <button
-      ref={setNodeRef}
-      className="draggable-coin"
-      style={{ transform: CSS.Translate.toString(transform) }}
-      {...listeners}
-      {...attributes}
-      type="button"
-    >
-      <CoinVisual name={name} />
+    <button ref={setNodeRef} className="draggable-coin" style={{ transform: CSS.Translate.toString(transform) }} {...listeners} {...attributes} type="button">
+      <CoinVisual denomination={denomination} />
     </button>
   );
 }
 
 function CountMatch({ level, onComplete, alreadyDone }: GameProps) {
   const target = level.targetCount ?? 3;
+  const coinIds: DenominationId[] = level.denominations?.length ? level.denominations : ["uk-1p"];
   const [done, setDone] = useState(alreadyDone);
+  const choices = Array.from(new Set([Math.max(1, target - 1), target, target + 1, target + 2])).slice(0, 4);
 
   function choose(count: number) {
     if (count === target) {
       setDone(true);
-      if (!done) {
-        onComplete();
-      }
+      if (!done) onComplete();
     } else {
       speak({ id: "count-hint", text: "Try counting each coin one at a time.", tone: "hint" });
     }
@@ -244,17 +232,150 @@ function CountMatch({ level, onComplete, alreadyDone }: GameProps) {
     <div className="count-game">
       <div className="count-coins">
         {Array.from({ length: target }).map((_, index) => (
-          <CoinVisual key={index} name={index % 2 === 0 ? "penny" : "dime"} />
+          <CoinVisual key={index} denomination={coinIds[index % coinIds.length]} />
         ))}
       </div>
       <div className="number-grid">
-        {[2, 3, 4, 5].map((count) => (
+        {choices.map((count) => (
           <AudioButton key={count} className="number-button" cue={{ id: `number-${count}`, text: String(count), tone: "tap" }} onClick={() => choose(count)}>
             {count}
           </AudioButton>
         ))}
       </div>
       {done ? <CompleteMessage alreadyDone={alreadyDone} /> : null}
+    </div>
+  );
+}
+
+function TinyShop({ level, onComplete, alreadyDone }: GameProps) {
+  const price = level.priceMinor ?? 2;
+  const coinIds: DenominationId[] = level.denominations?.length ? level.denominations : ["uk-1p", "uk-2p", "uk-5p"];
+  const [selected, setSelected] = useState<DenominationId[]>([]);
+  const [done, setDone] = useState(alreadyDone);
+  const total = selected.reduce((sum, id) => sum + getDenomination(id).valueMinor, 0);
+
+  function buy() {
+    if (total >= price) {
+      setDone(true);
+      if (!done) onComplete();
+    } else {
+      speak({ id: "shop-hint", text: "Save more first. Pick another coin.", tone: "hint" });
+    }
+  }
+
+  return (
+    <div className="shop-game">
+      <div className="shop-counter">
+        <span className="shop-item">{level.shopItem ?? "item"}</span>
+        <strong>{price}p</strong>
+      </div>
+      <div className="choice-grid">
+        {coinIds.map((id) => (
+          <AudioButton key={id} className="coin-choice" cue={{ id: `shop-${id}`, text: getDenomination(id).label, tone: "tap" }} onClick={() => setSelected((current) => [...current, id])}>
+            <CoinVisual denomination={id} />
+            <span>{getDenomination(id).shortLabel}</span>
+          </AudioButton>
+        ))}
+      </div>
+      <div className="command-tray">
+        <strong>{total}p picked</strong>
+      </div>
+      <AudioButton className="child-button" cue={{ id: "buy-item", text: "Try to buy it.", tone: "tap" }} onClick={buy}>
+        <Check aria-hidden="true" />
+        Buy
+      </AudioButton>
+      {done ? <CompleteMessage alreadyDone={alreadyDone} /> : null}
+    </div>
+  );
+}
+
+function MoreOrLess({ level, onComplete, alreadyDone }: GameProps) {
+  const [done, setDone] = useState(alreadyDone);
+  const pileA = level.pileA ?? ["uk-1p"];
+  const pileB = level.pileB ?? ["uk-2p"];
+  const totalA = pileTotal(pileA);
+  const totalB = pileTotal(pileB);
+  const answer = totalA >= totalB ? "A" : "B";
+
+  function choose(choice: "A" | "B") {
+    if (choice === answer) {
+      setDone(true);
+      if (!done) onComplete();
+    } else {
+      speak({ id: "more-hint", text: "Try the pile with the bigger amount.", tone: "hint" });
+    }
+  }
+
+  return (
+    <div className="compare-game">
+      <button className="pile-button" type="button" onClick={() => choose("A")} aria-label="Pile A">
+        {pileA.map((id, index) => (
+          <CoinVisual key={`${id}-${index}`} denomination={id} />
+        ))}
+      </button>
+      <button className="pile-button" type="button" onClick={() => choose("B")} aria-label="Pile B">
+        {pileB.map((id, index) => (
+          <CoinVisual key={`${id}-${index}`} denomination={id} />
+        ))}
+      </button>
+      {done ? <CompleteMessage alreadyDone={alreadyDone} /> : null}
+    </div>
+  );
+}
+
+function CoinSorter({ level, onComplete, alreadyDone }: GameProps) {
+  const groups = level.sortGroups ?? [];
+  const coinIds = level.denominations?.length ? level.denominations : groups.flatMap((group) => group.denominationIds);
+  const [placed, setPlaced] = useState<Record<string, string>>({});
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const done = Object.keys(placed).length >= coinIds.length || alreadyDone;
+
+  function onDragEnd(event: DragEndEvent) {
+    const coinId = String(event.active.id).replace("sort-", "") as DenominationId;
+    const groupId = String(event.over?.id ?? "");
+    const group = groups.find((entry) => entry.id === groupId);
+    if (!group) return;
+    if (group.denominationIds.includes(coinId)) {
+      const next = { ...placed, [coinId]: groupId };
+      setPlaced(next);
+      if (Object.keys(next).length >= coinIds.length && !done) onComplete();
+    } else {
+      speak({ id: "sort-hint", text: "Try a coin that matches this family.", tone: "hint" });
+    }
+  }
+
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <div className="sorter-game">
+        <div className="coin-bank-row">
+          {coinIds.map((id) => (placed[id] ? null : <DraggableSortCoin key={id} id={id} />))}
+        </div>
+        <div className="sort-zones">
+          {groups.map((group) => (
+            <SortZone key={group.id} group={group} count={Object.values(placed).filter((id) => id === group.id).length} />
+          ))}
+        </div>
+        {done ? <CompleteMessage alreadyDone={alreadyDone} /> : null}
+      </div>
+    </DndContext>
+  );
+}
+
+function DraggableSortCoin({ id }: { id: DenominationId }) {
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: `sort-${id}` });
+  return (
+    <button ref={setNodeRef} className="draggable-coin" style={{ transform: CSS.Translate.toString(transform) }} {...listeners} {...attributes} type="button">
+      <CoinVisual denomination={id} />
+    </button>
+  );
+}
+
+function SortZone({ group, count }: { group: SortGroup; count: number }) {
+  const { setNodeRef, isOver } = useDroppable({ id: group.id });
+  return (
+    <div ref={setNodeRef} className={`sort-zone ${isOver ? "over" : ""}`}>
+      <strong>{group.label}</strong>
+      <span>{count}</span>
     </div>
   );
 }
@@ -268,18 +389,12 @@ function StepShuffle({ level, onComplete, alreadyDone }: GameProps) {
 
   function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-    if (!over || active.id === over.id) {
-      return;
-    }
+    if (!over || active.id === over.id) return;
     setItems((current) => {
-      const oldIndex = current.indexOf(String(active.id));
-      const newIndex = current.indexOf(String(over.id));
-      const next = arrayMove(current, oldIndex, newIndex);
+      const next = arrayMove(current, current.indexOf(String(active.id)), current.indexOf(String(over.id)));
       if (next.join("|") === sequence.join("|")) {
         setDone(true);
-        if (!done) {
-          window.setTimeout(onComplete, 120);
-        }
+        if (!done) window.setTimeout(onComplete, 120);
       }
       return next;
     });
@@ -300,9 +415,7 @@ function StepShuffle({ level, onComplete, alreadyDone }: GameProps) {
         onClick={() => {
           if (items.join("|") === sequence.join("|")) {
             setDone(true);
-            if (!done) {
-              onComplete();
-            }
+            if (!done) onComplete();
           } else {
             speak({ id: "order-hint", text: "Try the first thing, then the next thing, then the last thing.", tone: "hint" });
           }
@@ -319,14 +432,7 @@ function StepShuffle({ level, onComplete, alreadyDone }: GameProps) {
 function SortableStep({ id }: { id: string }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
   return (
-    <button
-      className="step-card"
-      ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
-      {...attributes}
-      {...listeners}
-      type="button"
-    >
+    <button className="step-card" ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} {...attributes} {...listeners} type="button">
       <span className="step-picture">{id.slice(0, 1)}</span>
       <span>{id}</span>
     </button>
@@ -334,21 +440,25 @@ function SortableStep({ id }: { id: string }) {
 }
 
 function MoveBot({ level, onComplete, alreadyDone }: GameProps) {
-  const target = level.path ?? [];
-  const [commands, setCommands] = useState<Direction[]>([]);
+  return <PathBuilder level={level} onComplete={onComplete} alreadyDone={alreadyDone} target={level.path ?? []} />;
+}
+
+function BugHunt({ level, onComplete, alreadyDone }: GameProps) {
+  return <PathBuilder level={level} onComplete={onComplete} alreadyDone={alreadyDone} target={level.path ?? []} initial={level.buggyPath ?? []} />;
+}
+
+function PathBuilder({ level, onComplete, alreadyDone, target, initial = [] }: GameProps & { target: Direction[]; initial?: Direction[] }) {
+  const [commands, setCommands] = useState<Direction[]>(initial);
   const [done, setDone] = useState(alreadyDone);
   const finalPosition = target.reduce(movePosition, { x: 0, y: 0 });
   const botPosition = commands.reduce(movePosition, { x: 0, y: 0 });
-  const directions: Direction[] = ["up", "right", "down", "left"];
 
   function run() {
     if (commands.join("|") === target.join("|")) {
       setDone(true);
-      if (!done) {
-        onComplete();
-      }
+      if (!done) onComplete();
     } else {
-      speak({ id: "move-hint", text: "Try the arrows in the same order you hear them.", tone: "hint" });
+      speak({ id: "move-hint", text: level.buggyPath ? "Swap the command that bumps the wall." : "Try the arrows in the same order you hear them.", tone: "hint" });
     }
   }
 
@@ -372,7 +482,7 @@ function MoveBot({ level, onComplete, alreadyDone }: GameProps) {
         {commands.length === 0 ? <span className="empty-sequence">Tap arrows</span> : commands.map((direction, index) => <DirectionChip key={`${direction}-${index}`} direction={direction} />)}
       </div>
       <div className="arrow-pad">
-        {directions.map((direction) => (
+        {arrowChoices.map((direction) => (
           <AudioButton
             key={direction}
             className="arrow-button"
@@ -396,6 +506,50 @@ function MoveBot({ level, onComplete, alreadyDone }: GameProps) {
       {done ? <CompleteMessage alreadyDone={alreadyDone} /> : null}
     </div>
   );
+}
+
+function ChoiceGame({ level, onComplete, alreadyDone, mode }: GameProps & { mode: "pattern" | "weather" | "shape" }) {
+  const [done, setDone] = useState(alreadyDone);
+  const choices = level.choices ?? [];
+  const expected = level.expectedChoice ?? choices[0];
+
+  function choose(choice: string) {
+    if (choice === expected) {
+      setDone(true);
+      if (!done) onComplete();
+    } else {
+      speak({ id: "choice-hint", text: "Try the picture that matches the clue.", tone: "hint" });
+    }
+  }
+
+  return (
+    <div className={`${mode}-game choice-game`}>
+      {mode === "pattern" ? (
+        <div className="pattern-row">
+          {(level.pattern ?? []).map((item, index) => (
+            <span key={`${item}-${index}`} className="pattern-card">
+              {item}
+            </span>
+          ))}
+          <span className="pattern-card mystery">?</span>
+        </div>
+      ) : (
+        <div className="condition-card">{level.condition ?? "Command"}</div>
+      )}
+      <div className="choice-grid">
+        {choices.map((choice) => (
+          <AudioButton key={choice} className={`choice-card choice-${choice.toLowerCase()}`} cue={{ id: `choice-${choice}`, text: choice, tone: "tap" }} onClick={() => choose(choice)}>
+            {choice}
+          </AudioButton>
+        ))}
+      </div>
+      {done ? <CompleteMessage alreadyDone={alreadyDone} /> : null}
+    </div>
+  );
+}
+
+function pileTotal(pile: DenominationId[]) {
+  return pile.reduce((sum, id) => sum + getDenomination(id).valueMinor, 0);
 }
 
 function movePosition(position: { x: number; y: number }, direction: Direction) {

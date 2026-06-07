@@ -1,12 +1,13 @@
 import { Link } from "react-router-dom";
 import { Mascot } from "../components/visuals";
-import { games } from "../data/games";
+import { getGamesForRegion } from "../data/games";
 import { speak } from "../lib/audio";
 import { useProgressStore } from "../store/progressStore";
 
 export function AdventurePicker() {
   const settings = useProgressStore((state) => state.progress.parentSettings);
   const completedLevels = useProgressStore((state) => state.progress.completedLevels);
+  const games = getGamesForRegion(settings.region);
 
   return (
     <section>
@@ -14,6 +15,7 @@ export function AdventurePicker() {
         <div>
           <p className="eyebrow">Pick Adventure</p>
           <h1>Choose a world</h1>
+          <p className="page-note">{settings.region === "uk" ? "UK coins and coding adventures are ready." : "US coin adventures are ready."}</p>
         </div>
         <div className="mini-mascots">
           <Mascot type="penny" />

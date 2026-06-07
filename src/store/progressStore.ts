@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { GameKind, ParentSettings, ProgressState } from "../types";
-import { buySticker as buyStickerPure, completeLevel as completeLevelPure, createInitialProgress } from "../lib/rewards";
+import { buySticker as buyStickerPure, completeLevel as completeLevelPure, createInitialProgress, normalizeProgress } from "../lib/rewards";
 import { loadProgress, saveProgress } from "../lib/storage";
 import { setAudioEnabled } from "../lib/audio";
 
@@ -24,12 +24,10 @@ export const useProgressStore = create<ProgressStore>((set, get) => ({
   hydrated: false,
   hydrate: async () => {
     const stored = await loadProgress();
-    const progress = stored ?? createInitialProgress();
+    const progress = stored ? normalizeProgress(stored) : createInitialProgress();
     setAudioEnabled(progress.parentSettings.audioEnabled);
     set({ progress, hydrated: true });
-    if (!stored) {
-      await saveProgress(progress);
-    }
+    await saveProgress(progress);
   },
   completeLevel: (gameId, levelId, stars) => {
     const progress = completeLevelPure(get().progress, gameId, levelId, stars);

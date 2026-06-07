@@ -645,7 +645,11 @@ p {
 .coin-game,
 .piggy-game,
 .count-game,
-.move-game {
+.move-game,
+.shop-game,
+.compare-game,
+.sorter-game,
+.choice-game {
   display: grid;
   gap: 18px;
   justify-items: center;
@@ -657,7 +661,9 @@ p {
 .sequence-row,
 .command-tray,
 .arrow-pad,
-.game-actions {
+.game-actions,
+.pattern-row,
+.sort-zones {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -749,6 +755,159 @@ p {
 .count-coins {
   min-height: 130px;
   align-items: center;
+}
+
+.segmented-control {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.segmented-control button {
+  min-height: 60px;
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 4px 0 var(--ink);
+  font-weight: 900;
+}
+
+.segmented-control button.active {
+  background: var(--sun);
+}
+
+.shop-counter,
+.condition-card,
+.pattern-card,
+.pile-button,
+.sort-zone,
+.choice-card {
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 5px 0 var(--ink);
+  font-weight: 900;
+}
+
+.shop-counter {
+  display: grid;
+  min-width: min(360px, 100%);
+  min-height: 116px;
+  place-items: center;
+  padding: 14px;
+}
+
+.shop-item {
+  color: var(--muted);
+  text-transform: capitalize;
+}
+
+.shop-counter strong {
+  font-size: 2rem;
+}
+
+.compare-game {
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+  width: 100%;
+}
+
+.compare-game .success-note {
+  grid-column: 1 / -1;
+}
+
+.pile-button {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 190px;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.sorter-game {
+  width: 100%;
+}
+
+.sort-zones {
+  width: 100%;
+}
+
+.sort-zone {
+  display: grid;
+  flex: 1 1 150px;
+  min-height: 132px;
+  place-items: center;
+  border-style: dashed;
+  background: #fffdf6;
+}
+
+.sort-zone.over {
+  background: #f3fff1;
+  border-color: var(--leaf);
+}
+
+.sort-zone span {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--sun);
+}
+
+.pattern-row {
+  min-height: 106px;
+  align-items: center;
+}
+
+.pattern-card {
+  display: grid;
+  min-width: 104px;
+  min-height: 82px;
+  place-items: center;
+  padding: 10px;
+}
+
+.pattern-card.mystery {
+  background: var(--sun);
+  font-size: 2rem;
+}
+
+.condition-card {
+  display: grid;
+  min-width: min(320px, 100%);
+  min-height: 122px;
+  place-items: center;
+  background: #e7f8ff;
+  font-size: 1.7rem;
+}
+
+.choice-card {
+  min-height: 104px;
+  padding: 0 14px;
+  background: white;
+  cursor: pointer;
+}
+
+.choice-move {
+  background: #e7f8ff;
+}
+
+.choice-loop {
+  background: #fff4d6;
+  border-radius: 50%;
+}
+
+.choice-if {
+  background: #fff8bf;
+  transform: rotate(0deg);
+}
+
+.choice-stop {
+  background: #ffe1df;
 }
 
 .sequence-row {

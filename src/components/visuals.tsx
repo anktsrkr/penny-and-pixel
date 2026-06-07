@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import type { CSSProperties } from "react";
-import type { CoinName, StickerDefinition } from "../types";
-import { coins } from "../data/games";
+import type { DenominationId, MoneyDenomination, StickerDefinition } from "../types";
+import { getDenomination } from "../data/money";
 
 export function Mascot({ type, mood = "happy" }: { type: "penny" | "pixel"; mood?: "happy" | "proud" | "thinking" }) {
   return (
@@ -48,11 +48,11 @@ function PixelFace() {
   );
 }
 
-export function CoinVisual({ name, size = "large" }: { name: CoinName; size?: "small" | "large" }) {
-  const coin = coins[name];
+export function CoinVisual({ denomination, size = "large" }: { denomination: DenominationId | MoneyDenomination; size?: "small" | "large" }) {
+  const coin = typeof denomination === "string" ? getDenomination(denomination) : denomination;
   return (
     <span className={`coin-visual coin-${size}`} style={{ background: coin.color }} aria-label={coin.label}>
-      <span>{coin.value}</span>
+      <span>{coin.symbol}</span>
     </span>
   );
 }
